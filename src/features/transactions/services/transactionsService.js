@@ -1,23 +1,48 @@
-import api from "../../../lib/axios";
 
-const BASE = "/transactions";
+import api from '../../../lib/axios';
 
-export const createTransaction = async (payload) => {
-  // payload debe calzar con la tabla "transacciones"
-  const { data } = await api.post(`${BASE}`, payload);
-  return data;
+export const createTransaction = async (transactionData) => {
+  try {
+    const response = await api.post('/api/transactions', transactionData);
+    return response.data;
+  } catch (error) {
+    console.error('Error creating transaction:', error);
+    throw error;
+  }
 };
 
-export const listAccounts = async () => {
-  const { data } = await api.get(`/accounts`); // si manejas cuentas
-  return data;
+export const getCategoryReport = async (from, to) => {
+  try {
+    const response = await api.get('/api/transactions/reports/by-category', {
+      params: { from, to },
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching category report:', error);
+    throw error;
+  }
 };
 
-export const listCategories = async () => {
-  const { data } = await api.get(`/categories`); // si tus "presupuestos" vienen de acá, cámbialo
-  return data;
+export const getAccountReport = async (from, to) => {
+  try {
+    const response = await api.get('/api/transactions/reports/by-account', {
+      params: { from, to },
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching account report:', error);
+    throw error;
+  }
 };
 
-// Si tus presupuestos vienen del módulo budgets, puedes reusar tu budgetsService:
-// import { getBudgets } from "../../budgets/services/budgetsService";
-// …y llamar getBudgets() en el componente.
+export const getLatestTransactions = async (limit = 20) => {
+  try {
+    const response = await api.get('/api/transactions/latest', {
+      params: { limit },
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching latest transactions:', error);
+    throw error;
+  }
+};

@@ -5,10 +5,9 @@ import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useState, useEffect } from 'react';
-import { login } from '../services/authService';
-import { ErrorBanner } from '../../../components/ErrorBanner';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../contexts/AuthContext';
+import Swal from 'sweetalert2';
 
 const schema = z.object({
   email: z.string().email('Email inválido'),
@@ -17,13 +16,12 @@ const schema = z.object({
 
 function LoginForm() {
   const navigate = useNavigate();
-  const [apiError, setApiError] = useState('');
   const {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
   } = useForm({ resolver: zodResolver(schema) });
-  const { user } = useAuth();
+  const { user, login } = useAuth();
 
   useEffect(() => {
     if (user) {
@@ -32,12 +30,15 @@ function LoginForm() {
   }, [user, navigate]);
 
   const onSubmit = async (values) => {
-    setApiError('');
     try {
       await login(values.email, values.password);
       navigate('/dashboard');
     } catch (e) {
-      setApiError(e.message || 'Credenciales inválidas');
+      Swal.fire({
+        icon: 'error',
+        title: 'Error de autenticación',
+        text: e.message || 'Ocurrió un error al intentar iniciar sesión.',
+      });
     }
   };
 
@@ -50,9 +51,7 @@ function LoginForm() {
         Accede a tu cuenta para continuar.
       </Typography>
 
-      <ErrorBanner message={apiError} />
-
-      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 3 }}>
         <TextField
           fullWidth
           label="Correo electrónico"
@@ -81,10 +80,10 @@ function LoginForm() {
         >
           {isSubmitting ? 'Ingresando…' : 'Iniciar Sesión'}
         </Button>
-
-        <Button fullWidth variant="outlined" startIcon={<GoogleIcon />} sx={{ py: 1.5 }}>
+        
+        {/* <Button fullWidth variant="outlined" startIcon={<GoogleIcon />} sx={{ py: 1.5 }}>
           Continuar con Google
-        </Button>
+        </Button> */}
       </Box>
 
       <Box sx={{ mt: 2, display: 'flex', justifyContent: 'space-between' }}>

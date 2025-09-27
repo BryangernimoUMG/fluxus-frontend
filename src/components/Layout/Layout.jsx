@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { Box, Toolbar, useMediaQuery, useTheme } from '@mui/material';
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
 import { Sidebar } from '../Sidebar/Sidebar';
 import { Header } from '../Header/Header';
+import FAB from '../FAB/FAB';
 
 const DRAWER_WIDTH = 240;
 const MOBILE_BREAKPOINT = 'md'; // Umbral para cambiar a mobile (lg = 1200px, md = 960px, sm = 600px)
@@ -11,6 +12,7 @@ export const Layout = () => {
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down(MOBILE_BREAKPOINT));
     const [isMobileMenuOpen, setMobileMenuOpen] = useState(false);
+    const location = useLocation();
 
     const handleMobileMenuToggle = () => {
         setMobileMenuOpen(!isMobileMenuOpen);
@@ -19,6 +21,9 @@ export const Layout = () => {
     const handleMobileMenuClose = () => {
         setMobileMenuOpen(false);
     };
+
+    const fabHiddenPaths = ['/login', '/register', '/forgot-password', '/'];
+    const shouldShowFAB = !fabHiddenPaths.includes(location.pathname);
 
     return (
         <Box sx={{ display: 'flex' }}>
@@ -42,11 +47,13 @@ export const Layout = () => {
                     ml: {
                         [theme.breakpoints.up(MOBILE_BREAKPOINT)]: `${DRAWER_WIDTH}px`,
                     },
+                    position: 'relative',
                 }}
             >
                 {/* Este Toolbar compensa la altura del Header en mobile */}
                 {isMobile && <Toolbar />}
                 <Outlet />
+                {shouldShowFAB && <FAB />}
             </Box>
         </Box>
     );

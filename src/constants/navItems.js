@@ -3,6 +3,7 @@ export const NAV_ITEMS = [
     { label: 'Wallets',        to: '/wallets' },
     { label: 'Transacciones',  to: '/transacciones' },
     { label: 'Presupuestos',   to: '/presupuestos' },
-    { label: 'Reportes',       to: '/reportes' },
     { label: 'Configuración',  to: '/configuracion' },
 ];
+
+//{ label: 'Reportes',       to: '/reportes' },

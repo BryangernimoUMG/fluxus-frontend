@@ -13,6 +13,7 @@ import PresupuestosPage from '../features/budgets/pages/PresupuestosPage';
 import TransaccionesPage from '../features/transactions/pages/TransaccionesPage';
 import ReportesPage from '../features/reports/pages/ReportesPage';
 import ConfiguracionPage from '../features/settings/pages/ConfiguracionPage';
+import CreateTransactionPage from '../features/transactions/pages/CreateTransactionPage';
 
 export function AppRoutes() {
   return (
@@ -28,6 +29,10 @@ export function AppRoutes() {
         <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/wallets" element={<WalletsPage />} />
         <Route path="/transacciones" element={<TransaccionesPage />} />
+        <Route
+          path="/transacciones/crear"
+          element={<CreateTransactionPage />}
+        />
         <Route path="/presupuestos" element={<PresupuestosPage />} />
         <Route path="/reportes" element={<ReportesPage />} />
         <Route path="/configuracion" element={<ConfiguracionPage />} />
