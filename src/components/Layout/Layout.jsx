@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Box, Toolbar, useMediaQuery, useTheme } from '@mui/material';
 import { Outlet } from 'react-router-dom';
-import { Sidebar } from '../Sidebar/sidebar';
+import { Sidebar } from '../Sidebar/Sidebar';
 import { Header } from '../Header/Header';
 
 const DRAWER_WIDTH = 240;
