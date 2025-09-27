@@ -14,21 +14,15 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   const login = async (email, password) => {
-    try {
-      const backendUser = await loginService(email, password);
-      const firebaseUser = auth.currentUser;
+    const backendUser = await loginService(email, password);
+    const firebaseUser = auth.currentUser;
 
-      const combinedUser = {
-        ...firebaseUser,
-        ...backendUser,
-      };
-      setUser(combinedUser);
-      return combinedUser;
-    } catch (error) {
-      await logoutService();
-      setUser(null);
-      throw error;
-    }
+    const combinedUser = {
+      ...firebaseUser,
+      ...backendUser,
+    };
+    setUser(combinedUser);
+    return combinedUser;
   };
 
   const logout = async () => {

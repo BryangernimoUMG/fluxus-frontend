@@ -1,6 +1,7 @@
 import { Typography, Box, Divider } from '@mui/material';
 import ChangePasswordForm from '../components/ChangePasswordForm';
 import UpdateProfileForm from '../components/UpdateProfileForm';
+import TwoFactorSettings from '../components/TwoFactorSettings';
 
 export default function ConfiguracionPage() {
     return (
@@ -12,6 +13,7 @@ export default function ConfiguracionPage() {
             
             <Divider sx={{ my: 4 }} />
             <ChangePasswordForm />
+            <TwoFactorSettings />
             
         </Box>
     );
