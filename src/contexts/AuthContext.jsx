@@ -1,7 +1,7 @@
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { auth } from '../lib/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
-import { api } from '../lib/api';
+import api from '../lib/axios';
 import {
   login as loginService,
   logout as logoutService,
@@ -12,17 +12,28 @@ export const AuthContext = createContext();
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  // Evita dobles llamadas al backend cuando el estado de Firebase cambia durante un login manual
+  const loginInProgressRef = useRef(false);
 
   const login = async (email, password) => {
-    const backendUser = await loginService(email, password);
-    const firebaseUser = auth.currentUser;
+    try {
+      loginInProgressRef.current = true;
+      const backendUser = await loginService(email, password);
+      const firebaseUser = auth.currentUser;
 
-    const combinedUser = {
-      ...firebaseUser,
-      ...backendUser,
-    };
-    setUser(combinedUser);
-    return combinedUser;
+      const combinedUser = {
+        ...firebaseUser,
+        ...backendUser,
+      };
+      setUser(combinedUser);
+      loginInProgressRef.current = false;
+      return combinedUser;
+    } catch (error) {
+      await logoutService();
+      setUser(null);
+      loginInProgressRef.current = false;
+      throw error;
+    }
   };
 
   const logout = async () => {
@@ -34,6 +45,11 @@ export const AuthProvider = ({ children }) => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
         try {
+          // Si estamos en medio de un login manual, evitamos esta consulta porque
+          // login() ya establecerá el usuario con los datos del backend.
+          if (loginInProgressRef.current) {
+            return;
+          }
           // Cuando el estado de auth cambia, verificamos si tenemos un perfil en el backend
           const response = await api.get(`/api/users/${firebaseUser.uid}`);
           const backendProfile = response.data;

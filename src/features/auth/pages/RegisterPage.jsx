@@ -8,6 +8,7 @@ import { useState } from 'react';
 import { register as registerService } from '../services/authService';
 import { ErrorBanner } from '../../../components/ErrorBanner';
 import { Link, useNavigate } from 'react-router-dom';
+import Swal from 'sweetalert2';
 
 const schema = z.object({
   fullName: z.string().min(2, 'Tu nombre es requerido'),
@@ -50,6 +51,13 @@ function RegisterForm() {
         },
       };
       await registerService(values.email, values.password, userData);
+      // Informamos que se envió correo de verificación
+      await Swal.fire({
+        icon: 'success',
+        title: 'Cuenta creada',
+        text: 'Te enviamos un correo para verificar tu cuenta. Revisa tu bandeja de entrada y la carpeta de spam.',
+        confirmButtonText: 'Continuar',
+      });
       navigate('/dashboard');
     } catch (e) {
       setApiError(e.message || 'No se pudo crear la cuenta');

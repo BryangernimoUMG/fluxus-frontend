@@ -6,3 +6,5 @@ export const NAV_ITEMS = [
     { label: 'Reportes',       to: '/reportes' },
     { label: 'Configuración',  to: '/configuracion' },
 ];
+
+//{ label: 'Reportes',       to: '/reportes' },

@@ -8,6 +8,7 @@ import {
   EmailAuthProvider,
   reauthenticateWithCredential,
   updatePassword,
+  sendEmailVerification,
 } from 'firebase/auth';
 import Swal from 'sweetalert2';
 
@@ -65,6 +66,13 @@ export const register = async (email, password, userData) => {
     email,
     password
   );
+  // Envía correo de verificación inmediatamente después del alta en Firebase
+  try {
+    await sendEmailVerification(userCredential.user);
+  } catch (e) {
+    console.error('Failed to send email verification:', e);
+    // No interrumpimos el registro en backend si el envío falla; el usuario podrá reintentar desde Configuración.
+  }
   const idToken = await userCredential.user.getIdToken();
 
   const response = await api.post('/api/users/register', {
@@ -102,6 +110,21 @@ export const changePassword = async (currentPassword, newPassword) => {
       default:
         throw new Error('Ocurrió un error al cambiar la contraseña.');
     }
+  }
+};
+
+// Permite reenviar el correo de verificación desde la UI de configuración
+export const sendVerificationEmail = async () => {
+  const user = auth.currentUser;
+  if (!user) throw new Error('No hay un usuario autenticado.');
+  try {
+    await sendEmailVerification(user);
+  } catch (error) {
+    console.error('Error sending verification email:', error);
+    if (error.code === 'auth/too-many-requests') {
+      throw new Error('Has solicitado demasiados correos en poco tiempo. Intenta más tarde.');
+    }
+    throw new Error('No se pudo enviar el correo de verificación.');
   }
 };
 

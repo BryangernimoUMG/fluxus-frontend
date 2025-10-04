@@ -11,7 +11,7 @@ import DashboardPage from '../features/dashboard/pages/DashboardPage';
 import WalletsPage from '../features/wallets/pages/WalletsPage';
 import PresupuestosPage from '../features/budgets/pages/PresupuestosPage';
 import TransaccionesPage from '../features/transactions/pages/TransaccionesPage';
-import ReportesPage from '../features/reports/pages/ReportesPage';
+import ReportesExportPage from '../features/reports/pages/ReportesExportPage';
 import ConfiguracionPage from '../features/settings/pages/ConfiguracionPage';
 import CreateTransactionPage from '../features/transactions/pages/CreateTransactionPage';
 
@@ -34,7 +34,7 @@ export function AppRoutes() {
           element={<CreateTransactionPage />}
         />
         <Route path="/presupuestos" element={<PresupuestosPage />} />
-        <Route path="/reportes" element={<ReportesPage />} />
+        <Route path="/reportes" element={<ReportesExportPage />} />
         <Route path="/configuracion" element={<ConfiguracionPage />} />
       </Route>
 

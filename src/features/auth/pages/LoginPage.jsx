@@ -80,10 +80,10 @@ function LoginForm() {
         >
           {isSubmitting ? 'Ingresando…' : 'Iniciar Sesión'}
         </Button>
-
-        <Button fullWidth variant="outlined" startIcon={<GoogleIcon />} sx={{ py: 1.5 }}>
+        
+        {/* <Button fullWidth variant="outlined" startIcon={<GoogleIcon />} sx={{ py: 1.5 }}>
           Continuar con Google
-        </Button>
+        </Button> */}
       </Box>
 
       <Box sx={{ mt: 2, display: 'flex', justifyContent: 'space-between' }}>

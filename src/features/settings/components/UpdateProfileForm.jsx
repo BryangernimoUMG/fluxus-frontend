@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../../../contexts/AuthContext';
 import { updateProfile } from '../services/settingsService';
 import { TextField, Button, Box, Typography, Avatar, CircularProgress } from '@mui/material';
-import { api } from '../../../lib/api';
+import api from '../../../lib/axios';
 
 export default function UpdateProfileForm() {
     const { user } = useAuth();
