@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Box, Typography, Grid, Button, Snackbar, Alert, Paper, Stack, Divider } from '@mui/material';
+import { Box, Typography, Grid, Button, Snackbar, Alert, Paper, Stack, Divider, LinearProgress, Skeleton } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import WalletCard from '../components/WalletCard';
 import WalletFormDialog from '../components/WalletFormDialog';
+import WalletCardSkeleton from '../components/WalletCardSkeleton';
 import { listWallets, createWallet, updateWallet, deleteWallet, getAllBalances } from '../services/walletsService';
 
 function useBalancesMap(balances) {
@@ -16,6 +17,7 @@ function useBalancesMap(balances) {
 export default function WalletsPage() {
   const [items, setItems] = useState([]);
   const [balances, setBalances] = useState(null);
+  const [loading, setLoading] = useState(false);
   const [dialog, setDialog] = useState({ open: false, initial: null });
   const [snack, setSnack] = useState({ open: false, type: 'success', msg: '' });
   const balancesMap = useBalancesMap(balances);
@@ -23,11 +25,14 @@ export default function WalletsPage() {
   const show = (type, msg) => setSnack({ open: true, type, msg });
 
   async function fetchAll() {
-    const [a, b] = await Promise.all([listWallets({ pageSize: 100 }), getAllBalances()]);
-    if (!a.ok) show('error', a.error.message);
-    else setItems(a.data);
-    if (!b.ok) show('error', b.error.message);
-    else setBalances(b.data);
+    setLoading(true);
+    try {
+      const [a, b] = await Promise.all([listWallets({ pageSize: 100 }), getAllBalances()]);
+      if (!a.ok) show('error', a.error.message); else setItems(a.data);
+      if (!b.ok) show('error', b.error.message); else setBalances(b.data);
+    } finally {
+      setLoading(false);
+    }
   }
 
   useEffect(() => { fetchAll(); }, []);
@@ -60,6 +65,11 @@ export default function WalletsPage() {
 
   return (
     <Box>
+      {loading && (
+        <Box sx={{ position: 'sticky', top: 0, zIndex: 10, mb: 2 }}>
+          <LinearProgress />
+        </Box>
+      )}
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
         <Typography variant="h4">Wallets</Typography>
         <Button variant="contained" startIcon={<AddIcon />} onClick={() => setDialog({ open: true, initial: null })}>
@@ -70,7 +80,16 @@ export default function WalletsPage() {
       {/* (Deseable) ResumenBalances */}
       <Paper sx={{ p: 2, borderRadius: 3, mb: 3 }}>
         <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1 }}>Resumen de saldos por moneda</Typography>
-        {totals.length === 0 ? (
+        {loading ? (
+          <Stack direction="row" spacing={2}>
+            {Array.from({ length: 2 }).map((_, i) => (
+              <Box key={i}>
+                <Skeleton variant="text" width={60} height={14} />
+                <Skeleton variant="text" width={120} height={24} />
+              </Box>
+            ))}
+          </Stack>
+        ) : totals.length === 0 ? (
           <Typography color="text.secondary">Sin saldos aún.</Typography>
         ) : (
           <Stack direction="row" divider={<Divider orientation="vertical" flexItem />} spacing={2}>
@@ -87,7 +106,13 @@ export default function WalletsPage() {
       </Paper>
 
       <Grid container spacing={2}>
-        {items.length === 0 ? (
+        {loading ? (
+          Array.from({ length: 4 }).map((_, i) => (
+            <Grid key={i} item xs={12} sm={6} md={4} lg={3}>
+              <WalletCardSkeleton />
+            </Grid>
+          ))
+        ) : items.length === 0 ? (
           <Grid item xs={12}><Typography color="text.secondary">No hay wallets creadas.</Typography></Grid>
         ) : (
           items.map(w => (

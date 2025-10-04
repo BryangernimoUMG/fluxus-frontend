@@ -60,14 +60,17 @@ export async function listAccounts() {
 
 /** Usuario actual (intenta /auth/me y /api/users/me) */
 export async function getCurrentUser() {
+
   try {
     const uid = auth.currentUser?.uid;
     if (!uid) return null;
     const profile = await getUserProfile(uid);
     // Dashboard service puede devolver { user: {...} } o el objeto directo
     return profile?.user ?? profile ?? null;
-  } catch (e) {
+
+  } catch {
     return null;
+
   }
 }
 

@@ -4,25 +4,56 @@ import RegisterImage from '../assets/image-register.jpeg';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { register as registerService } from '../services/authService';
 import { ErrorBanner } from '../../../components/ErrorBanner';
 import { Link, useNavigate } from 'react-router-dom';
 import Swal from 'sweetalert2';
+import PasswordRequirements from '../../../components/PasswordRequirements';
+import { isPasswordStrong } from '../../../utils/passwordValidation';
+
+const passwordRequirements = {
+  minLength: 12,
+  messages: {
+    minLength: 'Debe tener al menos 12 caracteres',
+    upper: 'Debe incluir al menos una letra mayúscula',
+    lower: 'Debe incluir al menos una letra minúscula',
+    number: 'Debe incluir al menos un número',
+    special: 'Debe incluir al menos un caracter especial',
+  },
+};
 
 const schema = z.object({
   fullName: z.string().min(2, 'Tu nombre es requerido'),
   email: z.string().email('Email inválido'),
   password: z
     .string()
-    .min(8, 'Mínimo 8 caracteres')
-    .regex(/[A-Z]/, 'Incluye una mayúscula')
-    .regex(/[0-9]/, 'Incluye un número'),
+    .superRefine((val, ctx) => {
+      if (!val || val.length < passwordRequirements.minLength) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: passwordRequirements.messages.minLength,
+          path: ['password'],
+        });
+      }
+      if (!/[A-Z]/.test(val)) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: passwordRequirements.messages.upper, path: ['password'] });
+      }
+      if (!/[a-z]/.test(val)) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: passwordRequirements.messages.lower, path: ['password'] });
+      }
+      if (!/[0-9]/.test(val)) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: passwordRequirements.messages.number, path: ['password'] });
+      }
+      if (!/[^A-Za-z0-9]/.test(val)) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: passwordRequirements.messages.special, path: ['password'] });
+      }
+    }),
   birthDate: z.string().min(1, 'Selecciona tu fecha'),
   experience: z.enum(['beginner', 'intermediate', 'advanced'], {
     required_error: 'Selecciona tu experiencia',
   }),
-  currency: z.string().length(3, 'Código de moneda (3 letras, ej. GTQ, USD)'),
+  currency: z.enum(['GTQ', 'USD'], { required_error: 'Selecciona tu moneda' }),
 });
 
 function RegisterForm() {
@@ -36,8 +67,11 @@ function RegisterForm() {
     watch,
   } = useForm({
     resolver: zodResolver(schema),
-    defaultValues: { experience: '' },
+    defaultValues: { experience: '', currency: '' },
   });
+
+  const passwordValue = watch('password') || '';
+  const canSubmit = useMemo(() => isPasswordStrong(passwordValue), [passwordValue]);
 
   const onSubmit = async (values) => {
     setApiError('');
@@ -66,6 +100,7 @@ function RegisterForm() {
 
   return (
     <Box component="form" noValidate sx={{ width: '100%' }} onSubmit={handleSubmit(onSubmit)}>
+      
       <Typography variant="h4" component="h2" fontWeight="bold" gutterBottom>
         Crea tu cuenta
       </Typography>
@@ -100,6 +135,7 @@ function RegisterForm() {
           helperText={errors.password?.message}
           {...register('password')}
         />
+        <PasswordRequirements password={passwordValue} />
         <TextField
           fullWidth
           label="Fecha de nacimiento"
@@ -126,14 +162,21 @@ function RegisterForm() {
           </Typography>
         </FormControl>
 
-        <TextField
-          fullWidth
-          label="Moneda base (GTQ, USD, MXN, etc.)"
-          placeholder="GTQ"
-          error={!!errors.currency}
-          helperText={errors.currency?.message}
-          {...register('currency')}
-        />
+        <FormControl fullWidth error={!!errors.currency}>
+          <InputLabel id="currency-label">Moneda base</InputLabel>
+          <Select
+            labelId="currency-label"
+            label="Moneda base"
+            value={watch('currency')}
+            onChange={(e) => setValue('currency', e.target.value, { shouldValidate: true })}
+          >
+            <MenuItem value="GTQ">GTQ</MenuItem>
+            <MenuItem value="USD">USD</MenuItem>
+          </Select>
+          <Typography variant="caption" color="error">
+            {errors.currency?.message}
+          </Typography>
+        </FormControl>
 
         <Button
           type="submit"
@@ -141,13 +184,11 @@ function RegisterForm() {
           variant="contained"
           color="primary"
           sx={{ py: 1.5, fontWeight: 'bold', mt: 2 }}
-          disabled={isSubmitting}
+          disabled={isSubmitting || !canSubmit}
         >
           {isSubmitting ? 'Creando…' : 'Registrarse'}
         </Button>
-        <Button fullWidth variant="outlined" startIcon={<GoogleIcon />} sx={{ py: 1.5 }}>
-          Registrarse con Google
-        </Button>
+
       </Box>
 
       <Typography variant="body2" align="center" sx={{ mt: 3 }}>
@@ -206,7 +247,8 @@ const RegisterPage = () => {
       {/* DESKTOP */}
       <Container maxWidth="lg" sx={{ display: { xs: 'none', md: 'flex' }, height: '100vh', alignItems: 'center' }}>
         <Paper elevation={12} sx={{ borderRadius: 4, overflow: 'hidden', width: '100%', height: '80vh', display: 'flex' }}>
-          <Box sx={{ width: '50%', height: '100%', p: { xs: 2, sm: 4, md: 6 }, display: 'flex', flexDirection: 'column', justifyContent: 'center', overflowY: 'auto' }}>
+          {/* Start the form at the top on desktop to avoid initial mid-content scroll */}
+          <Box sx={{ width: '50%', height: '100%', p: { xs: 2, sm: 4, md: 6 }, display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', overflowY: 'auto' }}>
             <RegisterForm />
           </Box>
           <Box sx={{ width: '50%', height: '100%', backgroundImage: `url(${RegisterImage})`, backgroundSize: 'cover', backgroundPosition: 'center' }} />

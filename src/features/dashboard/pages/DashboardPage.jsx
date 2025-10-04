@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Box, Container, Grid, Card, CardContent, Typography, Divider } from "@mui/material";
+import { Box, Container, Grid, Card, CardContent, Typography, Divider, LinearProgress, Skeleton } from "@mui/material";
 import { useAuth } from "../../../contexts/AuthContext";
 import PeriodSelector from "../components/PeriodSelector";
 import StatCard from "../components/StatCard";
@@ -55,6 +55,11 @@ export default function DashboardPage() {
 
   return (
     <Container maxWidth="lg" sx={{ py: 3 }}>
+      {loading && (
+        <Box sx={{ position: "sticky", top: 0, left: 0, right: 0, zIndex: 10, mb: 2 }}>
+          <LinearProgress />
+        </Box>
+      )}
       <Box sx={{ display:"flex", justifyContent:"space-between", alignItems:"center", mb: 2 }}>
         <Typography variant="h5" sx={{ fontWeight: 700 }}>Dashboard</Typography>
         <PeriodSelector value={range} onChange={setRange} />
@@ -68,13 +73,13 @@ export default function DashboardPage() {
 
       <Grid container spacing={2}>
         <Grid item xs={12} md={4}>
-          <StatCard title="Balance"  value={loading ? "—" : money(summary.balanceBase)} />
+          <StatCard title="Balance"  value={loading ? "—" : money(summary.balanceBase)} loading={loading} />
         </Grid>
         <Grid item xs={12} md={4}>
-          <StatCard title="Ingresos" value={loading ? "—" : money(summary.incomeBase)} />
+          <StatCard title="Ingresos" value={loading ? "—" : money(summary.incomeBase)} loading={loading} />
         </Grid>
         <Grid item xs={12} md={4}>
-          <StatCard title="Gastos"   value={loading ? "—" : money(summary.expensesBase)} danger />
+          <StatCard title="Gastos"   value={loading ? "—" : money(summary.expensesBase)} danger loading={loading} />
         </Grid>
       </Grid>
 
@@ -88,8 +93,15 @@ export default function DashboardPage() {
           </Card>
         </Grid>
         <Grid item xs={12} md={6}>
-          <Card sx={{ borderRadius: 3, minHeight: 164, display:"flex", alignItems:"center", justifyContent:"center" }}>
-            <Typography variant="body2" color="text.secondary">Próximamente: Gráfica de flujo por día</Typography>
+          <Card sx={{ borderRadius: 3, minHeight: 164, display:"flex", alignItems:"center", justifyContent:"center", p:2 }}>
+            {loading ? (
+              <Box sx={{ width: "100%" }}>
+                <Skeleton variant="text" width={180} height={20} />
+                <Skeleton variant="rounded" height={120} sx={{ borderRadius: 2 }} />
+              </Box>
+            ) : (
+              <Typography variant="body2" color="text.secondary">Próximamente: Gráfica de flujo por día</Typography>
+            )}
           </Card>
         </Grid>
       </Grid>

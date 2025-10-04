@@ -1,7 +1,20 @@
-import { List, ListItem, ListItemText, Typography, Box } from "@mui/material";
+import { List, ListItem, ListItemText, Typography, Box, Skeleton } from "@mui/material";
 
 export default function RecentList({ items = [], loading }) {
-  if (loading) return <Typography variant="body2" color="text.secondary">Cargando recientes…</Typography>;
+  if (loading) {
+    return (
+      <List sx={{ py: 0 }}>
+        {Array.from({ length: 5 }).map((_, i) => (
+          <ListItem key={i} sx={{ px: 0 }}>
+            <Box sx={{ width: "100%" }}>
+              <Skeleton variant="text" width="60%" height={20} />
+              <Skeleton variant="text" width="40%" height={16} />
+            </Box>
+          </ListItem>
+        ))}
+      </List>
+    );
+  }
   if (!items.length) return <Typography variant="body2" color="text.secondary">Sin transacciones recientes.</Typography>;
 
   return (

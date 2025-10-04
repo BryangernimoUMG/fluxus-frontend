@@ -8,6 +8,7 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../contexts/AuthContext';
 import Swal from 'sweetalert2';
+import MfaOtpDialog from '../components/MfaOtpDialog';
 
 const schema = z.object({
   email: z.string().email('Email inválido'),
@@ -22,6 +23,8 @@ function LoginForm() {
     formState: { errors, isSubmitting },
   } = useForm({ resolver: zodResolver(schema) });
   const { user, login } = useAuth();
+  const [mfaResolver, setMfaResolver] = useState(null);
+  const [mfaOpen, setMfaOpen] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -34,6 +37,11 @@ function LoginForm() {
       await login(values.email, values.password);
       navigate('/dashboard');
     } catch (e) {
+      if (e?.code === 'mfa-required' && e?.resolver) {
+        setMfaResolver(e.resolver);
+        setMfaOpen(true);
+        return;
+      }
       Swal.fire({
         icon: 'error',
         title: 'Error de autenticación',
@@ -43,6 +51,7 @@ function LoginForm() {
   };
 
   return (
+    <>
     <Box component="form" noValidate sx={{ width: '100%' }} onSubmit={handleSubmit(onSubmit)}>
       <Typography variant="h4" component="h2" fontWeight="bold" gutterBottom>
         Iniciar Sesión
@@ -98,6 +107,16 @@ function LoginForm() {
         </Typography>
       </Box>
     </Box>
+    <MfaOtpDialog
+      open={mfaOpen}
+      resolver={mfaResolver}
+      onClose={() => setMfaOpen(false)}
+      onSuccess={() => {
+        setMfaOpen(false);
+        navigate('/dashboard');
+      }}
+    />
+    </>
   );
 }
 

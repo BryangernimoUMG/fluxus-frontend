@@ -11,6 +11,11 @@ import {
   sendEmailVerification,
 } from 'firebase/auth';
 import Swal from 'sweetalert2';
+import {
+  createResolverFromError,
+  sendMfaSignInCode,
+  finalizeMfaSignIn,
+} from './mfaService';
 
 export const login = async (email, password) => {
   try {
@@ -24,6 +29,15 @@ export const login = async (email, password) => {
     const response = await api.post('/api/users/login', { idToken });
     return response.data;
   } catch (error) {
+    // Caso especial: el usuario tiene MFA y se requiere el segundo factor
+    if (error?.code === 'auth/multi-factor-auth-required') {
+      const resolver = createResolverFromError(error);
+      // Devolvemos un objeto semántico para que la UI dispare el flujo MFA
+      const mfaError = new Error('Se requiere verificación en dos pasos');
+      mfaError.code = 'mfa-required';
+      mfaError.resolver = resolver;
+      throw mfaError;
+    }
     if (error.response) {
       // Error del backend
       console.error('Backend login error:', error.response.data);
@@ -58,6 +72,19 @@ export const login = async (email, password) => {
       throw new Error('Ocurrió un error inesperado. Por favor, inténtalo de nuevo.');
     }
   }
+};
+
+// Enviar código de SMS para el login MFA (elige el primer factor por defecto)
+export const sendMfaLoginCode = async (resolver, hintUid) => {
+  return await sendMfaSignInCode(resolver, hintUid);
+};
+
+// Finaliza el login con MFA y realiza el login en backend
+export const completeMfaSignIn = async (resolver, verificationId, code) => {
+  const userCredential = await finalizeMfaSignIn(resolver, verificationId, code);
+  const idToken = await userCredential.user.getIdToken();
+  const response = await api.post('/api/users/login', { idToken });
+  return response.data;
 };
 
 export const register = async (email, password, userData) => {
