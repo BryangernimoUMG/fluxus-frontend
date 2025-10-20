@@ -1,11 +1,17 @@
 import {
     Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Typography,
-    useTheme, useMediaQuery, Card, CardContent, Box, Chip
+    useTheme, useMediaQuery, Card, CardContent, Box, Chip, IconButton, Tooltip, Stack, Divider
 } from '@mui/material';
+import EditIcon from '@mui/icons-material/Edit';
+import DeleteIcon from '@mui/icons-material/Delete';
+import { useNavigate } from 'react-router-dom';
+import Swal from 'sweetalert2';
+import { deleteTransaction } from '../services/transactionsService';
 
-const TransactionRow = ({ transaction }) => {
+const TransactionRow = ({ transaction, onDeleted }) => {
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+    const navigate = useNavigate();
 
     const {
         tipo,
@@ -24,6 +30,34 @@ const TransactionRow = ({ transaction }) => {
     });
     const amountColor = tipo === 'ingreso' ? 'success.main' : 'error.main';
     const amountSign = tipo === 'ingreso' ? '+' : '-';
+
+    const goToEdit = () => {
+        // Navigate to create page in edit mode using query params
+        navigate(`/transacciones/crear?tipo=${tipo}&id=${transaction.id}`);
+    };
+
+    const confirmDelete = async () => {
+        const result = await Swal.fire({
+            title: '¿Eliminar transacción?',
+            text: 'Esta acción no se puede deshacer.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Sí, eliminar',
+            cancelButtonText: 'Cancelar',
+            confirmButtonColor: '#d33',
+        });
+
+        if (result.isConfirmed) {
+            try {
+                await deleteTransaction(transaction.id);
+                await Swal.fire('Eliminada', 'La transacción fue eliminada.', 'success');
+                onDeleted?.(transaction.id);
+            } catch (err) {
+                console.error(err);
+                Swal.fire('Error', 'No se pudo eliminar la transacción.', 'error');
+            }
+        }
+    };
 
     if (isMobile) {
         return (
@@ -50,6 +84,19 @@ const TransactionRow = ({ transaction }) => {
                             <Chip label={categorias.nombre} size="small" sx={{ backgroundColor: categorias.color || '#ccc' }} />
                         </Box>
                     )}
+                    <Divider sx={{ my: 1 }} />
+                    <Stack direction="row" spacing={1} justifyContent="flex-end">
+                        <Tooltip title="Editar">
+                            <IconButton color="primary" size="small" onClick={goToEdit}>
+                                <EditIcon fontSize="small" />
+                            </IconButton>
+                        </Tooltip>
+                        <Tooltip title="Eliminar">
+                            <IconButton color="error" size="small" onClick={confirmDelete}>
+                                <DeleteIcon fontSize="small" />
+                            </IconButton>
+                        </Tooltip>
+                    </Stack>
                 </CardContent>
             </Card>
         );
@@ -68,12 +115,24 @@ const TransactionRow = ({ transaction }) => {
                     {amountSign}{monto} {moneda}
                 </Typography>
             </TableCell>
+            <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>
+                <Tooltip title="Editar">
+                    <IconButton size="small" color="primary" onClick={goToEdit}>
+                        <EditIcon fontSize="small" />
+                    </IconButton>
+                </Tooltip>
+                <Tooltip title="Eliminar">
+                    <IconButton size="small" color="error" onClick={confirmDelete}>
+                        <DeleteIcon fontSize="small" />
+                    </IconButton>
+                </Tooltip>
+            </TableCell>
         </TableRow>
     );
 };
 
 
-export default function LatestTransactionsTable({ transactions }) {
+export default function LatestTransactionsTable({ transactions, onDeleted }) {
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
@@ -87,7 +146,7 @@ export default function LatestTransactionsTable({ transactions }) {
             {isMobile ? (
                 <Box>
                     {sortedTransactions.map((transaction) => (
-                        <TransactionRow key={transaction.id} transaction={transaction} />
+                        <TransactionRow key={transaction.id} transaction={transaction} onDeleted={onDeleted} />
                     ))}
                 </Box>
             ) : (
@@ -100,11 +159,12 @@ export default function LatestTransactionsTable({ transactions }) {
                                 <TableCell>Cuenta</TableCell>
                                 <TableCell>Categoría</TableCell>
                                 <TableCell align="right">Monto</TableCell>
+                                <TableCell align="right">Acciones</TableCell>
                             </TableRow>
                         </TableHead>
                         <TableBody>
                             {sortedTransactions.map((transaction) => (
-                                <TransactionRow key={transaction.id} transaction={transaction} />
+                                <TransactionRow key={transaction.id} transaction={transaction} onDeleted={onDeleted} />
                             ))}
                         </TableBody>
                     </Table>

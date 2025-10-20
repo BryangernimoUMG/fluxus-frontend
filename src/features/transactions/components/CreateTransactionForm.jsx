@@ -11,17 +11,18 @@ import {
 } from '@mui/material';
 import { getWallets } from '../services/walletService';
 import { getCategories } from '../../categoria/services/categoryService';
-import { createTransaction } from '../services/transactionsService';
+import { createTransaction, getTransactionById, updateTransaction } from '../services/transactionsService';
 import { useNavigate } from 'react-router-dom';
+import Swal from 'sweetalert2';
 
-const CreateTransactionForm = ({ tipo }) => {
+const CreateTransactionForm = ({ tipo, transactionId }) => {
   const navigate = useNavigate();
   const dataFetchedRef = useRef(false);
   const [formData, setFormData] = useState({
     tipo,
     monto: '',
     moneda: 'GTQ',
-    tasa_cambio: 1,
+    tasa_cambio: '1',
     fecha: new Date().toISOString().split('T')[0],
     descripcion: '',
     cuenta_id: '',
@@ -33,6 +34,7 @@ const CreateTransactionForm = ({ tipo }) => {
   const [categories, setCategories] = useState([]);
   const [filteredCategories, setFilteredCategories] = useState([]);
   const [loading, setLoading] = useState(true);
+  const isEdit = Boolean(transactionId);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -45,8 +47,25 @@ const CreateTransactionForm = ({ tipo }) => {
 
         setWallets(walletsData.items);
         setCategories(categoriesData.data.categories);
+        // If editing, fetch transaction and prefill
+        if (transactionId) {
+          const raw = await getTransactionById(transactionId);
+          const tx = raw?.transaction || raw?.data || raw; // normalize common shapes
+          // tx may include extra relations; map to our form shape
+          setFormData({
+            tipo: tx.tipo,
+            monto: String(tx.monto),
+            moneda: tx.moneda,
+            tasa_cambio: tx.tasa_cambio !== undefined && tx.tasa_cambio !== null ? String(tx.tasa_cambio) : '1',
+            fecha: new Date(tx.fecha).toISOString().split('T')[0],
+            descripcion: tx.descripcion || '',
+            cuenta_id: tx.cuenta_id || '',
+            categoria_id: tx.categoria_id || '',
+            cuenta_destino_id: tx.cuenta_destino_id || '',
+          });
+        }
       } catch (error) {
-        alert('Error al cargar los datos necesarios para el formulario.');
+        Swal.fire('Error', 'Error al cargar los datos necesarios para el formulario.', 'error');
       } finally {
         setLoading(false);
       }
@@ -77,7 +96,13 @@ const CreateTransactionForm = ({ tipo }) => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    setFormData((prev) => {
+      if (name === 'moneda') {
+        // If switching to GTQ, normalize tasa_cambio to '1'
+        return { ...prev, [name]: value, tasa_cambio: value === 'USD' ? prev.tasa_cambio : '1' };
+      }
+      return { ...prev, [name]: value };
+    });
   };
 
   const handleSubmit = async (e) => {
@@ -85,26 +110,33 @@ const CreateTransactionForm = ({ tipo }) => {
 
     // Validaciones básicas
     if (!formData.monto || parseFloat(formData.monto) <= 0) {
-      alert('El monto debe ser un número positivo.');
+      Swal.fire('Validación', 'El monto debe ser un número positivo.', 'warning');
       return;
     }
     if (!formData.cuenta_id) {
-      alert('Debe seleccionar una cuenta.');
+      Swal.fire('Validación', 'Debe seleccionar una cuenta.', 'warning');
       return;
     }
+    if (formData.moneda === 'USD') {
+      const rate = Number(formData.tasa_cambio);
+      if (!rate || rate <= 0) {
+        Swal.fire('Validación', 'La tasa de cambio debe ser un número positivo.', 'warning');
+        return;
+      }
+    }
     if (tipo !== 'transferencia' && !formData.categoria_id) {
-      alert('Debe seleccionar una categoría.');
+      Swal.fire('Validación', 'Debe seleccionar una categoría.', 'warning');
       return;
     }
     if (tipo === 'transferencia' && !formData.cuenta_destino_id) {
-      alert('Debe seleccionar una cuenta de destino.');
+      Swal.fire('Validación', 'Debe seleccionar una cuenta de destino.', 'warning');
       return;
     }
     if (
       tipo === 'transferencia' &&
       formData.cuenta_id === formData.cuenta_destino_id
     ) {
-      alert('La cuenta de origen y destino no pueden ser la misma.');
+      Swal.fire('Validación', 'La cuenta de origen y destino no pueden ser la misma.', 'warning');
       return;
     }
 
@@ -112,7 +144,7 @@ const CreateTransactionForm = ({ tipo }) => {
       const dataToSend = {
         ...formData,
         monto: parseFloat(formData.monto),
-        tasa_cambio: parseFloat(formData.tasa_cambio),
+  tasa_cambio: formData.moneda === 'USD' ? parseFloat(formData.tasa_cambio) : 1,
         fecha: new Date(formData.fecha).toISOString(),
       };
 
@@ -123,11 +155,16 @@ const CreateTransactionForm = ({ tipo }) => {
         delete dataToSend.cuenta_destino_id;
       }
 
-      await createTransaction(dataToSend);
-      alert('Transacción creada con éxito');
+      if (isEdit) {
+        await updateTransaction(transactionId, dataToSend);
+        await Swal.fire('Actualizada', 'La transacción fue actualizada correctamente.', 'success');
+      } else {
+        await createTransaction(dataToSend);
+        await Swal.fire('Creada', 'La transacción fue creada con éxito.', 'success');
+      }
       navigate('/transacciones');
     } catch (error) {
-      alert('Error al crear la transacción. Por favor, intente de nuevo.');
+      Swal.fire('Error', 'Ocurrió un error al guardar la transacción.', 'error');
     }
   };
 
@@ -184,7 +221,8 @@ const CreateTransactionForm = ({ tipo }) => {
               onChange={handleChange}
               fullWidth
               required
-              inputProps={{ step: '0.01' }}
+              inputProps={{ step: '0.0001', min: '0' }}
+              helperText="Tasa de USD a moneda base"
             />
           </Grid>
         )}
@@ -287,7 +325,7 @@ const CreateTransactionForm = ({ tipo }) => {
         <Grid xs={12}>
           <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
             <Button type="submit" variant="contained" color="primary">
-              Crear Transacción
+              {isEdit ? 'Actualizar Transacción' : 'Crear Transacción'}
             </Button>
           </Box>
         </Grid>

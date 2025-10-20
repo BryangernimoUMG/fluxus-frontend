@@ -1,6 +1,10 @@
 
 import { useState, useEffect, useRef } from 'react';
-import { Typography, Box, CircularProgress, Alert } from '@mui/material';
+import { Typography, Box, CircularProgress, Alert, Button } from '@mui/material';
+import TrendingUpIcon from '@mui/icons-material/TrendingUp';
+import TrendingDownIcon from '@mui/icons-material/TrendingDown';
+import CompareArrowsIcon from '@mui/icons-material/CompareArrows';
+import { useNavigate } from 'react-router-dom';
 //getCategoryReport
 import { getAccountReport, getLatestTransactions } from '../services/transactionsService';
 //import CategorySummary from '../components/CategorySummary';
@@ -14,6 +18,7 @@ export default function TransaccionesPage() {
     const [latestTransactions, setLatestTransactions] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const navigate = useNavigate();
 
     useEffect(() => {
         const fetchReports = async () => {
@@ -24,17 +29,17 @@ export default function TransaccionesPage() {
                 const to = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999).toISOString();
 
 
-                //categoryData, 
-                const [accountData, latestData] = await Promise.all([
+                //categoryData, getAccountReport(from, to),
+                const [latestData] = await Promise.all([
                     
-                    getAccountReport(from, to),
+                    
                     getLatestTransactions()
                 ]);
 
                 //getCategoryReport(from, to),
                 
                 //setCategoryReport(categoryData);
-                setAccountReport(accountData);
+                //setAccountReport(accountData);
                 setLatestTransactions(latestData);
                 setError(null);
             } catch (err) {
@@ -58,13 +63,49 @@ export default function TransaccionesPage() {
                 Transacciones
             </Typography>
 
+            {/* Acciones rápidas bajo el título */}
+            <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', mb: 3 }}>
+                <Button
+                    variant="contained"
+                    color="success"
+                    startIcon={<TrendingUpIcon />}
+                    sx={{ color: '#fff', borderRadius: 8, textTransform: 'none' }}
+                    onClick={() => navigate('/transacciones/crear?tipo=ingreso')}
+                >
+                    Registrar ingreso
+                </Button>
+                <Button
+                    variant="contained"
+                    color="error"
+                    startIcon={<TrendingDownIcon />}
+                    sx={{ color: '#fff', borderRadius: 8, textTransform: 'none' }}
+                    onClick={() => navigate('/transacciones/crear?tipo=egreso')}
+                >
+                    Registrar egreso
+                </Button>
+                <Button
+                    variant="contained"
+                    color="primary"
+                    startIcon={<CompareArrowsIcon />}
+                    sx={{ color: '#fff', borderRadius: 8, textTransform: 'none' }}
+                    onClick={() => navigate('/transacciones/crear?tipo=transferencia')}
+                >
+                    Haces transferencia
+                </Button>
+            </Box>
+
             {loading && <CircularProgress />}
             {error && <Alert severity="error">{error}</Alert>}
             {!loading && !error && (
                 <>
                     {/*<CategorySummary data={categoryReport} />*/}
-                    <AccountSummary data={accountReport} />
-                    <LatestTransactionsTable transactions={latestTransactions} />
+                    {/*<AccountSummary data={accountReport} /> */}
+                    <LatestTransactionsTable
+                        transactions={latestTransactions}
+                        onDeleted={(id) =>
+                            setLatestTransactions((prev) => prev.filter((t) => t.id !== id))
+                        }
+                    />
                 </>
             )}
         </Box>

@@ -6,12 +6,19 @@ import CreateTransactionForm from '../components/CreateTransactionForm';
 const CreateTransactionPage = () => {
   const [searchParams] = useSearchParams();
   const tipo = searchParams.get('tipo') || 'ingreso';
+  const id = searchParams.get('id');
 
-  const title = {
-    ingreso: 'Registrar Nuevo Ingreso',
-    egreso: 'Registrar Nuevo Egreso',
-    transferencia: 'Registrar Nueva Transferencia',
-  }[tipo];
+  const title = id
+    ? {
+        ingreso: 'Editar Ingreso',
+        egreso: 'Editar Egreso',
+        transferencia: 'Editar Transferencia',
+      }[tipo]
+    : {
+        ingreso: 'Registrar Nuevo Ingreso',
+        egreso: 'Registrar Nuevo Egreso',
+        transferencia: 'Registrar Nueva Transferencia',
+      }[tipo];
 
   return (
     <Box>
@@ -19,7 +26,7 @@ const CreateTransactionPage = () => {
         {title}
       </Typography>
       <Paper elevation={3} sx={{ p: 4 }}>
-        <CreateTransactionForm tipo={tipo} />
+        <CreateTransactionForm tipo={tipo} transactionId={id || undefined} />
       </Paper>
     </Box>
   );
